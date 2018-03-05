@@ -1,0 +1,9 @@
+I used this program on 10.2 and 10.3 to read and write to scsi tapes. 
+This is the last version - tuOSX0.8a1.
+There were about 50 groups using it when my wedsite was closed down.
+Interestingly the were several small special effect houses using it to move movies around.
+It still worked on 10.3, but it was getting harder to use.
+The README-tuOSX.rtf file contains the documentation.
+It did work on the old versions of MacOSX. It actually generates the SCSI commands and 
+mac system routines are just used to send the commands to the SCSI tape drive. In theory, 
+it could be ported to other systems by replacing the send and receive routines.

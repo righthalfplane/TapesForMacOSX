@@ -1,0 +1,297 @@
+{\rtf1\mac\ansicpg10000\cocoartf102
+{\fonttbl\f0\fswiss\fcharset77 Helvetica-Bold;\f1\fswiss\fcharset77 Helvetica;\f2\fnil\fcharset77 LucidaGrande-Bold;
+\f3\fnil\fcharset77 LucidaGrande;}
+{\colortbl;\red255\green255\blue255;}
+\margl1440\margr1440\vieww13860\viewh13980\viewkind0
+\pard\ql\qnatural
+
+\f0\b\fs36 \cf0 tuOSX 0.8-Beta-3
+\f1\b0\fs26 \
+\
+\
+ 
+\f2\b\fs32 1.0. Introduction.\
+\
+
+\f1\b0\fs26      tuOSX can read and write to SCSI-2 tape drives (most SCSI-3 devices, also, understand the SCSI-2 commands ) from the command line under MacOS-X . The program issues SCSI-2 commands in synchronous mode - those drives that only accept asynchronous commands will not work.\
+      tuOSX tends to work fine with compatiable devices or it hangs the SCSI bus until the system is rebooted with in-compatiable devcies. It appears that many tape drives do not follow the standard - a peek at the Lunix tape driver shows special patches for several tape drives and a table of many tape drives that are in-compatiable. tuOSX seems to work correctly about 70 percent of the time with devices that say they are SCSI-2 tape drives.\
+\
+      Tapes can be written in the "variable" record length mode or in the "fixed" record mode. Reading a fixed record tape in variable record mode will work, but it will the tape read one record at a time and that can be extremely slow. It is best to read the tape in the same mode as it was written. The section "Determining Tape Parameters" tells how to find the correct parameters to use for a unknown tape.  Lunix will read variable record length tapes only if you have a version of mt that will let the record length be set to zero and if the variable record blocks are not too large. Most SGI tapes can not be read on Lunix system because of the huge size of the variable length records. So, keep the block size down on variable record length tapes.\
+\
+\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural
+
+\f2\b\fs32 \cf0 2.0. Does the System Like My Drive ?\
+\
+\pard\ql\qnatural
+
+\f1\b0\fs26 \cf0       (MacOSX 10.2) Look in "Apple System Profiler" -> "Devices and Volumes" under "Bus"->"IOSCSIParallelDevice". If your tape drive(s) appears once, with "SCSI Lun 0" and "SCSI Device Type 1", the system sees your drive as a tape drive that it thinks that it can handle. If it shows more than one "Lun" or a "Lun" other than zero, your drive will not likely work. With MacOSX 10.3 the "Apple System Profiler" no longer shows the SCSI devices correctly - try the method described in "Determining Tape Parameters" as a test.
+\f2\b\fs32 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural
+\cf0  \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural
+
+\f3\b0\fs28 \cf0 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural
+
+\f2\b\fs32 \cf0 3.0. Installing tuOSX.\
+\
+    
+\f1\b0\fs26 tuOSX does not need to be in any special location as long as there is a path to it. A standard set of commands to put it into "/usr/bin" would be -\
+\
+	tar -xvf tuOSX0.8.tar\
+   	cd tuOSX0.8\
+	sudo cp tuOSX /usr/bin/tuOSX\
+      	sudo chmod +x /usr/bin/tuOSX\
+      	rehash\
+      	which tuOSX\
+   \
+	The which command should show tuOSX in "/usr/bin" if everything worked correctly.\
+\
+
+\f2\b\fs32 4.0. Using tuOSX.\
+	\
+	
+\f1\b0\fs26 The first step is to type -\
+\
+	tuOSX status\
+\
+	      tuOSX should print information about the tape drives that it finds. The tape number and other information should be printed. If it finds more than one tape device, then "-t n" needs to be the first argument to tuOSX for all commands, where n is the tape number. If there is only one tape, it defaults to zero.
+\f2\b\fs32 \
+	\
+4.1. Determining Tape Parameters.\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural
+
+\f1\b0\fs26 \cf0 	Tapes can be written with "fixed" or "variable" length records. If you do not know the block size or the type, you need to find it. tuOSX can find out by trying to read the tape a few times. The following procedure can be used. The commands -\
+\
+      	tuOSX -t 0 rewind\
+	tuOSX setblk 0\
+      	tuOSX -debug 2 -t 0 -blocksize 1000000 -variable read >test1.dum\
+\
+will set the tape to variable record input and try to read the first file with a huge block - the debug print will show the actual bytes read - that will usually be the block size. If it is a small number like 512 or 1024, the tape is likely a fixed block size tape. If it is a number like 20480 or bigger, the tape likely has variable length records. If tuOSX does not print the error message with "Bytes Read", but times out after about 2 minutes then the tape cannot be read. This only seems to happen when the tape was written on a different and apparently incompatible tape drive.\
+\
+ 
+\f2\b\fs32 4.1.1. Testing for a fixed record tape.\
+\
+
+\f1\b0\fs26      If you got something like 1024, try -\
+\
+	tuOSX -t 0 rewind\
+	tuOSX -t 0 setblk 1024\
+ 	tuOSX -t 0 read >test2.dum\
+\
+      If that does not error, then that is the block size and it is a fixed block tape and you are ready to go. If that does error try -\
+\
+      	tuOSX -t 0 rewind\
+	tuOSX -t 0 setblk 0\
+      	tuOSX -t 0 -blocksize 1024 -variable read >test3.dum\
+\
+      If that does not error, then it is a variable block tape with a small block size. If this errors, sorry that was the last try.\
+\
+ 
+\f2\b\fs32 4.1.2. Testing for a variable length record tape.\
+
+\f1\b0\fs26 \
+      If you got some thing like 10240, try -\
+\
+     	tuOSX -t 0 rewind\
+ 	tuOSX -t 0 setblk 0\
+      	tuOSX -t 0 -blocksize 10240 -variable read >test4.dum\
+\
+      If that does not error, then the tape is using variable records and you are ready to go.  If that does error try -\
+\
+	tuOSX -t 0 rewind\
+	tuOSX -t 0 setblk 10240\
+	tuOSX -t 0 read >test5.dum\
+    \
+      If that does not error, then it is a fixed block tape with a large block size. If this errors, sorry that was the last try.\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural
+
+\f2\b\fs32 \cf0 4.2. tuOSX Commands.\
+\
+\
+4.2.1. Reading The Tape Status.\
+\
+	
+\f1\b0\fs26 To display the status of tape zero -\
+\
+	tuOSX -t 0 status
+\f2\b\fs32 \
+\
+4.2.2. Rewinding The Tape.\
+\
+	
+\f1\b0\fs26 To rewind tape zero -\
+\
+	tuOSX -t 0 rewind
+\f2\b\fs32 \
+\
+4.2.3. Positioning The Tape.\
+\
+	
+\f1\b0\fs26 To skip tape marks on device zero, the command -\
+\
+      tuOSX -t 0 fsf 2\
+      \
+      will skip two tape marks in the forward direction. Use bsf to skip in the backward direction.\
+
+\f2\b\fs32 \
+	
+\f1\b0\fs26 To skip data records on device zero, the command -\
+\
+      tuOSX -t 0 fsf 119000\
+      \
+      will skip 119000 data records in the forward direction. Use bsr to skip in the backward direction.\
+\
+
+\f2\b\fs32 \
+4.2.4. Setting Tape Block Size.\
+\
+	
+\f1\b0\fs26 To read or write variable block size tapes, the block size must be set to zero -\
+\
+	tuOSX -t 0  setblk 0\
+      \
+
+\f2\b\fs32 	
+\f1\b0\fs26 If the default block size is different from the tape's block size, the block size must be set to match that of the tape. To set the block size to 1024 -\
+\
+	tuOSX -t 0  setblk 1024\
+
+\f2\b\fs32 \
+4.2.5. Reading Fixed Block Tapes.\
+\
+	
+\f1\b0\fs26 To read fixed block tapes, set the block size and then get the data. The commands to list a tar file from a tape are -\
+\
+	tuOSX -t 0 rewind\
+	\
+    	tuOSX -t 0 -fixed  | tar -tvf /dev/stdin\
+\
+	Sets the block size to 1024 and reads the tape. To copy the next tar file to the current directory and list it-\
+\
+	tuOSX -t 0 read  >next.tar\
+	tar -tvf next.tar\
+	\
+
+\f2\b\fs32 \
+4.2.6. Writing Fixed Block Tapes.\
+\
+	
+\f1\b0\fs26 To write fixed block tapes, set the block size and then dump the data -\
+
+\f2\b\fs32 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural
+
+\f1\b0\fs26 \cf0 	tuOSX -t 0 rewind\
+	tuOSX -t 0 setblk 1024\
+    	tar -cf /dev/stdout dplotr8 | tuOSX -t 0 write\
+	tar -cf /dev/stdout xedit | tuOSX -t 0 write\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural
+
+\f2\b\fs32 \cf0 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural
+
+\f1\b0\fs26 \cf0 	Sets the block size to 1024 and tars the two folders dplotr8 and xedit to the tape.\
+\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural
+
+\f3\fs28 \cf0 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural
+
+\f2\b\fs32 \cf0 4.2.7. Reading Variable Block Tapes.\
+\
+	
+\f1\b0\fs26 To read a variable block tape that been determined to have been written with a block size of 10240, set the block size and then get the data. The commands to list a tar file from a tape are -\
+\
+	tuOSX -t 0 rewind\
+	tuOSX -t 0 setblk 0\
+    	tuOSX -t 0 -blocksize 10240 -variable read | tar -tvf /dev/stdin\
+\
+	To copy the next tar file to the current directory and list it-\
+\
+	tuOSX -t 0 -blocksize 10240 -variable read  >next2.tar\
+	tar -tvf next2.tar\
+	\
+
+\f2\b\fs32 4.2.8. Writing Variable Block Tapes.\
+\
+	
+\f1\b0\fs26 To write variable block tape with a record size of 10240, set the block size and then dump the data -\
+
+\f2\b\fs32 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural
+
+\f1\b0\fs26 \cf0 	tuOSX -t 0 rewind\
+	tuOSX -t 0 setblk 0\
+    	tar -cf /dev/stdout dplotr8 | tuOSX -t 0 -blocksize 10240 -variable write\
+	tar -cf /dev/stdout xedit | tuOSX -t 0 -blocksize 10240 -variable write\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural
+
+\f2\b\fs32 \cf0 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural
+
+\f1\b0\fs26 \cf0 	Sets the block size to 10240 and tars the two folders dplotr8 and xedit to the tape.\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural
+
+\f2\b\fs32 \cf0 \
+\
+4.2.9. Backing Up Macintosh Applications.\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural
+
+\f1\b0\fs26 \cf0 \
+	  If you need to backup Macinosh applications, then you need to use a program that saves the resource information like "hfstar" or pax. hfstar is a version of tar that saves the resource information. Saving Chess with hfstar -\
+\
+	tuOSX -t 0 rewind\
+	tuOSX -t 0 setblk 1024\
+	hfstar -cf /dev/stdout Chess.app | tuOSX -t 0 write\
+\
+\
+	  Restoring VPNClient with hfstar -\
+	  \
+	tuOSX -t 0 rewind\
+	tuOSX -t 0 setblk 1024\
+	tuOSX -t 0 read | hfstar -xf /dev/stdin\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural
+
+\f2\b\fs32 \cf0 4.2.10. Multi-reel Tapes.\
+\
+	
+\f1\b0\fs26 There seems to be no standard way to end tapes - Suse Lunix, Red Hat Lunix, and SGI all use different sequences. If you try to write off the end of a tape, Suse Lunix 8.1 errors, while the SGI writes a tape mark and asks for the next tape. It is not clear how to determine when you have a multi-reel tape. tuOSX assumes that one tape mark followed by an end of medium is a muli-reel tape and will ask for the next tape. if tuOSX runs off the end of the tape while writing, it will write a tape mark and ask for the next tape -\
+\
+	tuOSX  -t 0 read | tar -xvf /dev/stdin\
+\
+	has tuOSX ask for the next tape - if it finds one tape mark followed by an end of medium.\
+\
+	Adding the write command -\
+\
+	tar -cf /dev/stdout PHOTO | tuOSX  -t 0 write\
+\
+	has tuOSX write a tape mark and ask for the next tape - if it runs of of tape while writing.\
+
+\f2\b\fs32 \
+4.2.10. Debug Output.\
+\
+\
+	
+\f1\b0\fs26 The debug print out is turned on by adding "-debug level" to the tuOSX command -\
+\
+	 tuOSX -debug 2 -t 0 read  | tar -tvf /dev/stdin\
+\
+        will turn on the debug output at level 2.\
+\
+
+\f2\b\fs32 \
+5.0 Disclaimer.
+\f3\b0\fs28 \
+\
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. \
+\
+\
+\
+}
