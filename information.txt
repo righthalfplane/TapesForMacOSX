@@ -7,3 +7,5 @@ The README-tuOSX.rtf file contains the documentation.
 It did work on the old versions of MacOSX. It actually generates the SCSI commands and 
 mac system routines are just used to send the commands to the SCSI tape drive. In theory, 
 it could be ported to other systems by replacing the send and receive routines.
+hfstar is not needed on later versions of MacOSX. Its specical options have been included
+in later versions of tar.
